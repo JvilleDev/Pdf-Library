@@ -48,7 +48,7 @@
       </div>
     </div>
     <div v-else class="mt-4">
-      <p>No se encontraron resultados.</p>
+      <p>No results found.</p>
     </div>
 
   </div>
