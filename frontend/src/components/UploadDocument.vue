@@ -21,6 +21,7 @@
       </div>
     </div>
   </nav>
+  <div id="alertBox"></div>
   <div class="upload-form">
     <h2>Upload Document</h2>
     <div class="form-group">
@@ -36,17 +37,15 @@
     </div>
     <br>
     <div class="custom-file">
-      <input type="file" ref="file" @change="onFileChange" class="custom-file-input">
+      <input type="file" ref="file" @change="onFileChange" class="form-control">
     </div>
     <br><br>
     <button @click="uploadDocument" class="btn btn-primary">Upload</button>
   </div>
 </template>
-
   
 <script>
 import axios from "axios";
-
 export default {
   name: "uploadDocument",
   data() {
@@ -57,7 +56,7 @@ export default {
       file: null
     };
   }, created() {
-    document.title = "Upload New"
+    document.title = "Upload Document"
   },
   methods: {
     onFileChange(event) {
@@ -76,11 +75,28 @@ export default {
             "Content-Type": "multipart/form-data"
           }
         });
-        console.log("Document uploaded:", response.data);
+        this.alertBox(`Document ${response.data.title} uploaded successfully`, 'success');
       } catch (error) {
-        console.error(error);
+        this.alertBox(`Error uploading Document: ${error}`, 'danger');
       }
+    }, alertBox(text, type) {
+      const alertBox = document.getElementById('alertBox');
+      if (!alertBox) {
+        console.error("Alert box element not found.");
+        return;
+      }
+      alertBox.innerHTML = '';
+      const alertText = document.createElement('p');
+      alertText.textContent = text;
+      alertBox.classList.add(type);
+      alertBox.classList.add('active');
+      alertBox.appendChild(alertText);
+      console.log(`Alert text = "${text}" of type = "${type}"`);
+      setTimeout(function() {
+        alertBox.classList.remove('active');
+      }, 4000);
     }
+
   }
 };
 </script>
@@ -89,9 +105,52 @@ export default {
 .upload-form {
   max-width: 400px;
   margin: auto;
+  margin-top: 3rem;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 5px;
 }
-</style>
+
+#alertBox {
+  background-color: #ddd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 0 10px 0 black;
+  position: absolute;
+  z-index: 999;
+  top: 10%;
+  right: 10%;
+  transform: translateX(600px);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#alertBox.active {
+  align-items: center;
+  justify-content: left;
+  transform: translateX(100px);
+}
+
+#alertBox p {
+  margin: 0;
+}
+
+#alertBox.warning {
+  background-color: #F18F01;
+  color: white;
+}
+
+#alertBox.danger {
+  background-color: #BC2C1A;
+  color: white;
+}
+
+#alertBox.success {
+  background-color: #1abc25;
+  color: white;
+}
+
+#alertBox.info {
+  background-color: #5688C7;
+  color: white;
+}</style>
   

@@ -39,10 +39,12 @@
               <p class="card-text"><strong>Tags:</strong> {{ result.tags }}</p>
               <ul v-if="result.context" class="list-group card-text" style="margin-bottom: 1rem;">
                 <strong class="list-group-item active">Coincidences:</strong>
-                <li v-for="contextItem in result.context" :key="contextItem" class="list-group-item"
-                  @click="copyToClipboard(contextItem)">
-                  <span v-html="highlightText(contextItem, query)"></span>
-                </li>
+                <div style="max-height: 300px;overflow-y: auto;overflow-x: hidden;border: var(--bs-list-group-border-width) solid var(--bs-list-group-border-color);">
+                  <li v-for="contextItem in result.context" :key="contextItem" class="list-group-item"
+                    @click="copyToClipboard(contextItem)">
+                    <span v-html="highlightText(contextItem, query)"></span>
+                  </li>
+                </div>
               </ul>
               <a :href="getDocumentURL(result.filePath)" class="btn btn-primary" target="_blank">Open Document</a>
             </div>
@@ -75,9 +77,16 @@ export default {
   methods: {
     highlightText(context, query) {
       if (!query) return context;
-      const regex = new RegExp(`(${query})`, 'gi');
-      return context.replace(regex, '<span class="highlighted">$1</span>');
-    }, getDocumentURL(documentID) {
+      const normalizedQuery = this.normalizeText(query);
+      const normalizedContext = this.normalizeText(context);
+      const regex = new RegExp(`(${normalizedQuery})`, 'giu');
+      return normalizedContext.replace(regex, '<span class="highlighted">$1</span>');
+    },
+    normalizeText(text) {
+      return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    ,
+    getDocumentURL(documentID) {
       return `http://localhost:3000${documentID}`;
     },
     async easySearch() {
@@ -151,9 +160,11 @@ body {
   flex-wrap: wrap;
   justify-content: left;
 }
+
 .card-text li {
   cursor: pointer;
 }
+
 .card {
   flex-basis: calc(33.3% - 20px);
   margin-bottom: 20px;
@@ -164,11 +175,13 @@ body {
     flex-basis: calc(25% - 10px);
   }
 }
+
 @media (max-width: 768px) {
   .card {
     flex-basis: calc(50% - 10px);
   }
 }
+
 @media (max-width: 576px) {
   .card {
     flex-basis: 100%;
@@ -185,4 +198,5 @@ body {
 
 *::-webkit-scrollbar-track {
   background-color: rgba(0, 0, 0, 0.1);
-}</style>
+}
+</style>

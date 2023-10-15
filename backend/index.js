@@ -15,6 +15,13 @@ app.use(bodyParser.json());
 app.use("/static", express.static("static"));
 
 let documents = [];
+
+try {
+    const data = fs.readFileSync('index.json', 'utf8');
+    documents = JSON.parse(data);
+} catch (err) {
+    console.error('Error al leer el archivo:', err);
+}
 // Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -64,7 +71,7 @@ fs.readFile("tokenizedIndex.json", "utf8", (err, data) => {
     
     app.get("/full-search/:searchTerm", async (req, res) => {
       try {
-        const searchTerm = req.params.searchTerm; // Mantener el término de búsqueda original
+        const searchTerm = normalizeSearchTerm(req.params.searchTerm);
         const fileData = await readFile("tokenizedIndex.json");
         const tokenizedIndex = JSON.parse(fileData);
         const results = [];
@@ -80,9 +87,8 @@ fs.readFile("tokenizedIndex.json", "utf8", (err, data) => {
           while (startIndex < searchText.length) {
             let termMatch = true;
     
-            // Comprobar si hay una coincidencia en el término de búsqueda en esta ubicación
             for (let i = 0; i < searchTermTokens.length; i++) {
-              if (searchText[startIndex + i] !== searchTermTokens[i]) {
+              if (normalizeToken(searchText[startIndex + i]) !== searchTermTokens[i]) {
                 termMatch = false;
                 break;
               }
@@ -113,9 +119,14 @@ fs.readFile("tokenizedIndex.json", "utf8", (err, data) => {
       }
     });
     
+    function normalizeSearchTerm(term) {
+      return term.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
     
-    
-  }});
+    function normalizeToken(token) {
+      return token.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+      }});
     app.get("/info/:id", async (req, res) => {
   try {
     const fileId = parseInt(req.params.id);
