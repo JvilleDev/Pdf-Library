@@ -45,11 +45,12 @@ To get started with the PDF Library, follow these simple steps:
 ## Usage
 
 1. Upload your PDF documents and provide title, categories, and description.
-
+![uploadPage](https://raw.githubusercontent.com/JvilleDev/Pdf-Library/main/screenshots/uploadDoc.png)
 2. Use the search features to quickly locate documents by content or metadata.
-
-3. Browse the document listing for an overview of your entire document library.
-
+![easySearch](https://raw.githubusercontent.com/JvilleDev/Pdf-Library/main/screenshots/easySearch.png)
+![fullSearch](https://raw.githubusercontent.com/JvilleDev/Pdf-Library/main/screenshots/fullSearch.png)
+4. Browse the document listing for an overview of your entire document library.
+![allDocs](https://raw.githubusercontent.com/JvilleDev/Pdf-Library/main/screenshots/allDocs.png)
 
 ## Acknowledgments
 
