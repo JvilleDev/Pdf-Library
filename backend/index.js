@@ -54,35 +54,69 @@ fs.readFile("tokenizedIndex.json", "utf8", (err, data) => {
     console.error("Error al leer el archivo:", err);
   } else {
     indexedData = JSON.parse(data);
+    const unaccented = (str) => {
+      // Esta función quita los acentos y convierte a minúsculas
+      return str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    };
+    
     app.get("/full-search/:searchTerm", async (req, res) => {
       try {
-        const searchTerm = req.params.searchTerm.toLowerCase();
+        const searchTerm = req.params.searchTerm; // Mantener el término de búsqueda original
         const fileData = await readFile("tokenizedIndex.json");
         const tokenizedIndex = JSON.parse(fileData);
         const results = [];
+    
         for (let entry of tokenizedIndex) {
           const { id, tokens } = entry;
-          const searchText = tokens.join(" ");
-          if (searchText.includes(searchTerm)) {
-            const startIndex = searchText.indexOf(searchTerm);
-            const endIndex = searchText.indexOf(".", startIndex);
-            let context = searchText.substring(
-              searchText.lastIndexOf(".", startIndex) + 1,
-              endIndex !== -1 ? endIndex + 1 : searchText.length
-            );
-
-            results.push({ id, context });
+          const searchText = tokens;
+          const searchTermTokens = searchTerm.split(" ");
+          let startIndex = 0;
+          let matchFound = false;
+          const matches = [];
+    
+          while (startIndex < searchText.length) {
+            let termMatch = true;
+    
+            // Comprobar si hay una coincidencia en el término de búsqueda en esta ubicación
+            for (let i = 0; i < searchTermTokens.length; i++) {
+              if (searchText[startIndex + i] !== searchTermTokens[i]) {
+                termMatch = false;
+                break;
+              }
+            }
+    
+            if (termMatch) {
+              const startIndexContext = Math.max(0, startIndex - 15);
+              const endIndexContext = Math.min(startIndex + searchTermTokens.length + 15, searchText.length);
+              const contextTokens = searchText.slice(startIndexContext, endIndexContext);
+              const context = contextTokens.join(" ");
+    
+              matches.push(context);
+              startIndex += searchTermTokens.length;
+              matchFound = true;
+            } else {
+              startIndex++;
+            }
+          }
+    
+          if (matchFound) {
+            results.push({ id, matches });
           }
         }
-
-        res.json(results);
+    
+        res.json({ Coincidencias: results });
       } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
       }
     });
-  }
-});
-app.get("/info/:id", async (req, res) => {
+    
+    
+    
+  }});
+    app.get("/info/:id", async (req, res) => {
   try {
     const fileId = parseInt(req.params.id);
     const fileData = await readFile("index.json");
@@ -108,7 +142,6 @@ app.post("/new-document", upload.single("file"), async (req, res) => {
   const filePath = `/static/library/${req.file.originalname}`;
   const newDocument = { id, title, description, tags, filePath };
   documents.push(newDocument);
-  idx.addDoc(newDocument);
   fs.readFile("index.json", "utf8", (err, data) => {
     if (err) {
       console.error("Error al leer el archivo:", err);

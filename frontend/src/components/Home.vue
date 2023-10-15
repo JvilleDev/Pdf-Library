@@ -37,10 +37,13 @@
               <h5 class="card-title">{{ result.title }}</h5>
               <p class="card-text">{{ result.description }}</p>
               <p class="card-text"><strong>Tags:</strong> {{ result.tags }}</p>
-              <p v-if="result.context" class="card-text">
-                <strong>Text:</strong>
-                <span v-html="highlightText(result.context, query)"></span>
-              </p>
+              <ul v-if="result.context" class="list-group card-text" style="margin-bottom: 1rem;">
+                <strong class="list-group-item active">Coincidences:</strong>
+                <li v-for="contextItem in result.context" :key="contextItem" class="list-group-item"
+                  @click="copyToClipboard(contextItem)">
+                  <span v-html="highlightText(contextItem, query)"></span>
+                </li>
+              </ul>
               <a :href="getDocumentURL(result.filePath)" class="btn btn-primary" target="_blank">Open Document</a>
             </div>
           </div>
@@ -90,29 +93,96 @@ export default {
       try {
         const searchTerm = this.query;
         const response = await axios.get(`http://localhost:3000/full-search/${searchTerm}`);
-        this.results = await Promise.all(response.data.map(async (item) => {
-          const infoResponse = await axios.get(`http://localhost:3000/info/${item.id}`);
-          const { title, description, tags, filePath } = infoResponse.data;
-          return {
-            id: item.id,
-            title: title,
-            description: description,
-            tags: tags,
-            context: item.context,
-            filePath: filePath
-          };
-        }));
+
+        if (response.data && response.data.Coincidencias) {
+          const coincidencias = response.data.Coincidencias;
+          this.results = await Promise.all(coincidencias.map(async (item) => {
+            if (item.id) {
+              const infoResponse = await axios.get(`http://localhost:3000/info/${item.id}`);
+              const { title, description, tags, filePath } = infoResponse.data;
+              return {
+                id: item.id,
+                title: title,
+                description: description,
+                tags: tags,
+                context: item.matches,
+                filePath: filePath
+              };
+            }
+          }));
+        }
       } catch (error) {
         console.error('Error en la solicitud fullSearch:', error);
       }
+    }, copyToClipboard(text) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Copied to clipboard')
     }
   }
 };
 </script>
 
 <style>
+body {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
 .highlighted {
   background-color: yellow;
   font-weight: bold;
 }
-</style>
+
+.list-group-item {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+  background-color: #eee;
+}
+
+.card-columns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: left;
+}
+.card-text li {
+  cursor: pointer;
+}
+.card {
+  flex-basis: calc(33.3% - 20px);
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+  .card {
+    flex-basis: calc(25% - 10px);
+  }
+}
+@media (max-width: 768px) {
+  .card {
+    flex-basis: calc(50% - 10px);
+  }
+}
+@media (max-width: 576px) {
+  .card {
+    flex-basis: 100%;
+  }
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+*::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.1);
+}</style>

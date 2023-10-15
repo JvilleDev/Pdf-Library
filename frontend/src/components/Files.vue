@@ -89,6 +89,7 @@ export default {
 @media (max-width: 576px) {
     .card {
         flex-basis: 100%;
+        margin: 0;
     }
 }
 </style>
